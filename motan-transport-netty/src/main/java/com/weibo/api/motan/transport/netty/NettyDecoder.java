@@ -20,9 +20,11 @@ import com.weibo.api.motan.codec.Codec;
 import com.weibo.api.motan.common.MotanConstants;
 import com.weibo.api.motan.exception.MotanFrameworkException;
 import com.weibo.api.motan.exception.MotanServiceException;
-import com.weibo.api.motan.rpc.DefaultResponse;
+import com.weibo.api.motan.protocol.rpc.RpcProtocolVersion;
+import com.weibo.api.motan.rpc.Request;
 import com.weibo.api.motan.rpc.Response;
 import com.weibo.api.motan.util.LoggerUtil;
+import com.weibo.api.motan.util.MotanFrameworkUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -56,29 +58,41 @@ public class NettyDecoder extends FrameDecoder {
             return null;
         }
         buffer.markReaderIndex();
-
         short type = buffer.readShort();
 
         if (type != MotanConstants.NETTY_MAGIC_TYPE) {
             buffer.resetReaderIndex();
             throw new MotanFrameworkException("NettyDecoder transport header not support, type: " + type);
         }
+        long requestStart = System.currentTimeMillis();
+
         buffer.skipBytes(1);
-        int rpcversion = (buffer.readByte() & 0xff) >>> 3;
-        switch (rpcversion) {
+        int rpcVersion = (buffer.readByte() & 0xff) >>> 3;
+        Object result;
+        switch (rpcVersion) {
             case 0:
-                return decodev1(ctx, channel, buffer);
+                result = decodeV1(ctx, channel, buffer);
+                break;
             case 1:
-                return decodev2(ctx, channel, buffer);
+                result = decodeV2(ctx, channel, buffer);
+                break;
             default:
-                return decodev2(ctx, channel, buffer);
+                result = decodeV2(ctx, channel, buffer);
         }
 
+        if (result instanceof Request) {
+            MotanFrameworkUtil.logEvent((Request) result, MotanConstants.TRACE_SRECEIVE, requestStart);
+            MotanFrameworkUtil.logEvent((Request) result, MotanConstants.TRACE_SDECODE);
+        } else if (result instanceof Response) {
+            MotanFrameworkUtil.logEvent((Response) result, MotanConstants.TRACE_CRECEIVE, requestStart);
+            MotanFrameworkUtil.logEvent((Response) result, MotanConstants.TRACE_CDECODE);
+        }
+        return result;
     }
 
-    private Object decodev2(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
+    private Object decodeV2(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
         buffer.resetReaderIndex();
-        if(buffer.readableBytes() < 21){
+        if (buffer.readableBytes() < 21) {
             return null;
         }
         buffer.skipBytes(2);
@@ -96,14 +110,14 @@ public class NettyDecoder extends FrameDecoder {
             }
             buffer.skipBytes(metasize);
         }
-        if(buffer.readableBytes() < 4){
+        if (buffer.readableBytes() < 4) {
             buffer.resetReaderIndex();
             return null;
         }
         int bodysize = buffer.readInt();
-        checkMaxContext(bodysize, ctx, channel, isRequest, requestId);
+        checkMaxContext(bodysize, ctx, channel, isRequest, requestId, RpcProtocolVersion.VERSION_2);
         size += 4;
-        if (bodysize > 0){
+        if (bodysize > 0) {
             size += bodysize;
             if (buffer.readableBytes() < bodysize) {
                 buffer.resetReaderIndex();
@@ -113,14 +127,14 @@ public class NettyDecoder extends FrameDecoder {
         byte[] data = new byte[size];
         buffer.resetReaderIndex();
         buffer.readBytes(data);
-        return decode(data, channel, isRequest, requestId);
+        return decode(data, channel, isRequest, requestId, RpcProtocolVersion.VERSION_2);
     }
 
-    private boolean isV2Request(byte b){
+    private boolean isV2Request(byte b) {
         return (b & 0x01) == 0x00;
     }
 
-    private Object decodev1(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
+    private Object decodeV1(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
         buffer.resetReaderIndex();
         buffer.skipBytes(2);// skip magic num
         byte messageType = (byte) buffer.readShort();
@@ -132,25 +146,21 @@ public class NettyDecoder extends FrameDecoder {
             buffer.resetReaderIndex();
             return null;
         }
-        checkMaxContext(dataLength, ctx, channel, messageType == MotanConstants.FLAG_REQUEST, requestId);
+        checkMaxContext(dataLength, ctx, channel, messageType == MotanConstants.FLAG_REQUEST, requestId, RpcProtocolVersion.VERSION_1);
 
         byte[] data = new byte[dataLength];
 
         buffer.readBytes(data);
-        return decode(data, channel, messageType == MotanConstants.FLAG_REQUEST, requestId);
+        return decode(data, channel, messageType == MotanConstants.FLAG_REQUEST, requestId, RpcProtocolVersion.VERSION_1);
     }
 
-    private void checkMaxContext(int dataLength, ChannelHandlerContext ctx, Channel channel, boolean isRequest, long requestId) throws Exception {
+    private void checkMaxContext(int dataLength, ChannelHandlerContext ctx, Channel channel, boolean isRequest, long requestId, RpcProtocolVersion version) throws Exception {
         if (maxContentLength > 0 && dataLength > maxContentLength) {
-            LoggerUtil.warn(
-                    "NettyDecoder transport data content length over of limit, size: {}  > {}. remote={} local={}",
-                    dataLength, maxContentLength, ctx.getChannel().getRemoteAddress(), ctx.getChannel()
-                            .getLocalAddress());
-            Exception e = new MotanServiceException("NettyDecoder transport data content length over of limit, size: "
-                    + dataLength + " > " + maxContentLength);
-
+            LoggerUtil.warn("NettyDecoder transport data content length over of limit, size: {}  > {}. remote={} local={}",
+                    dataLength, maxContentLength, ctx.getChannel().getRemoteAddress(), ctx.getChannel().getLocalAddress());
+            Exception e = new MotanServiceException("NettyDecoder transport data content length over of limit, size: " + dataLength + " > " + maxContentLength);
             if (isRequest) {
-                Response response = buildExceptionResponse(requestId, e);
+                Response response = MotanFrameworkUtil.buildErrorResponse(requestId, version.getVersion(), e);
                 channel.write(response);
                 throw e;
             } else {
@@ -159,30 +169,21 @@ public class NettyDecoder extends FrameDecoder {
         }
     }
 
-    private Object decode(byte[] data, Channel channel, boolean isRequest, long requestId){
+    private Object decode(byte[] data, Channel channel, boolean isRequest, long requestId, RpcProtocolVersion version) {
+        String remoteIp = getRemoteIp(channel);
         try {
-            String remoteIp = getRemoteIp(channel);
             return codec.decode(client, remoteIp, data);
         } catch (Exception e) {
-            LoggerUtil.error("NettyDecoder decode fail! requestid" + requestId + ", size:" + data.length, e);
+            LoggerUtil.error("NettyDecoder decode fail! requestid=" + requestId + ", size:" + data.length + ", ip:" + remoteIp + ", e:" + e.getMessage());
             if (isRequest) {
-                Response resonse = buildExceptionResponse(requestId, e);
-                channel.write(resonse);
+                Response response = MotanFrameworkUtil.buildErrorResponse(requestId, version.getVersion(), e);
+                channel.write(response);
                 return null;
             } else {
-                Response resonse = buildExceptionResponse(requestId, e);
-                return resonse;
+                return MotanFrameworkUtil.buildErrorResponse(requestId, version.getVersion(), e);
             }
         }
     }
-
-    private Response buildExceptionResponse(long requestId, Exception e) {
-        DefaultResponse response = new DefaultResponse();
-        response.setRequestId(requestId);
-        response.setException(e);
-        return response;
-    }
-
 
     private String getRemoteIp(Channel channel) {
         String ip = "";

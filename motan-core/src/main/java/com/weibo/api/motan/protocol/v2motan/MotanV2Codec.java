@@ -24,6 +24,7 @@ import com.weibo.api.motan.core.extension.SpiMeta;
 import com.weibo.api.motan.exception.MotanErrorMsgConstant;
 import com.weibo.api.motan.exception.MotanFrameworkException;
 import com.weibo.api.motan.exception.MotanServiceException;
+import com.weibo.api.motan.protocol.rpc.RpcProtocolVersion;
 import com.weibo.api.motan.rpc.DefaultRequest;
 import com.weibo.api.motan.rpc.DefaultResponse;
 import com.weibo.api.motan.rpc.Request;
@@ -48,13 +49,12 @@ import static com.weibo.api.motan.common.MotanConstants.*;
 
 @SpiMeta(name = "motan2")
 public class MotanV2Codec extends AbstractCodec {
-
     private static final byte MASK = 0x07;
     private static final int HEADER_SIZE = 13;
 
 
     static {
-        initAllSerialziation();
+        initAllSerialization();
     }
 
     @Override
@@ -68,13 +68,7 @@ public class MotanV2Codec extends AbstractCodec {
             }
             MotanV2Header header = new MotanV2Header();
             byte[] body = null;
-            String serialName = channel.getUrl().getParameter(URLParamType.serialize.getName(), URLParamType.serialize.getValue());
-            Serialization serialization = ExtensionLoader.getExtensionLoader(Serialization.class).getExtension(serialName);
-            if (serialization == null) {
-                throw new MotanServiceException("can not found serialization " + serialName);
-            }
-            header.setSerialize(serialization.getSerializationNumber());
-
+            Serialization serialization;
             GrowableByteBuffer buf = new GrowableByteBuffer(4096);
             //meta
             int index = HEADER_SIZE;
@@ -82,6 +76,12 @@ public class MotanV2Codec extends AbstractCodec {
             buf.putInt(0);//metasize
 
             if (message instanceof Request) {
+                String serialName = channel.getUrl().getParameter(URLParamType.serialize.getName(), URLParamType.serialize.getValue());
+                serialization = ExtensionLoader.getExtensionLoader(Serialization.class).getExtension(serialName);
+                if (serialization == null) {
+                    throw new MotanServiceException("can not found serialization " + serialName);
+                }
+                header.setSerialize(serialization.getSerializationNumber());
                 Request request = (Request) message;
                 putString(buf, M2_PATH);
                 putString(buf, request.getInterfaceName());
@@ -98,12 +98,15 @@ public class MotanV2Codec extends AbstractCodec {
                 putMap(buf, request.getAttachments());
 
                 header.setRequestId(request.getRequestId());
-                if(request.getArguments() != null){
+                if (request.getArguments() != null) {
                     body = serialization.serializeMulti(request.getArguments());
                 }
 
             } else if (message instanceof Response) {
                 Response response = (Response) message;
+                serialization = getSerializationByNum(response.getSerializeNumber());
+                header.setSerialize(serialization.getSerializationNumber());
+
                 putString(buf, M2_PROCESS_TIME);
                 putString(buf, String.valueOf(response.getProcessTime()));
                 if (response.getException() != null) {
@@ -219,7 +222,7 @@ public class MotanV2Codec extends AbstractCodec {
             byte[] meta = new byte[metaSize];
             buf.position(index);
             buf.get(meta);
-            metaMap = deocdeMeta(meta);
+            metaMap = decodeMeta(meta);
             index += metaSize;
         }
         int bodySize = buf.getInt(index);
@@ -233,12 +236,14 @@ public class MotanV2Codec extends AbstractCodec {
                 body = ByteUtil.unGzip(body);
             }
             //默认自适应序列化
-            Serialization serialization = getSerializaiontByNum(header.getSerialize());
+            Serialization serialization = getSerializationByNum(header.getSerialize());
             obj = new DeserializableObject(serialization, body);
         }
         if (header.isRequest()) {
             if (header.isHeartbeat()) {
-                return DefaultRpcHeartbeatFactory.getDefaultHeartbeatRequest(header.getRequestId());
+                Request request = DefaultRpcHeartbeatFactory.getDefaultHeartbeatRequest(header.getRequestId());
+                request.setRpcProtocolVersion(RpcProtocolVersion.VERSION_2.getVersion());
+                return request;
             } else {
                 DefaultRequest request = new DefaultRequest();
                 request.setRequestId(header.getRequestId());
@@ -246,13 +251,25 @@ public class MotanV2Codec extends AbstractCodec {
                 request.setMethodName(metaMap.remove(M2_METHOD));
                 request.setParamtersDesc(metaMap.remove(M2_METHOD_DESC));
                 request.setAttachments(metaMap);
-                request.setArguments(new Object[]{obj});
+                request.setRpcProtocolVersion(RpcProtocolVersion.VERSION_2.getVersion());
+                request.setSerializeNumber(header.getSerialize());
+                if (obj != null) {
+                    request.setArguments(new Object[]{obj});
+                }
                 if (metaMap.get(M2_GROUP) != null) {
                     request.setAttachment(URLParamType.group.getName(), metaMap.get(M2_GROUP));
                 }
 
                 if (StringUtils.isNotBlank(metaMap.get(M2_VERSION))) {
                     request.setAttachment(URLParamType.version.getName(), metaMap.get(M2_VERSION));
+                }
+
+                if (StringUtils.isNotBlank(metaMap.get(M2_SOURCE))) {
+                    request.setAttachment(URLParamType.application.getName(), metaMap.get(M2_SOURCE));
+                }
+
+                if (StringUtils.isNotBlank(metaMap.get(M2_MODULE))) {
+                    request.setAttachment(URLParamType.module.getName(), metaMap.get(M2_MODULE));
                 }
 
                 return request;
@@ -281,7 +298,7 @@ public class MotanV2Codec extends AbstractCodec {
 
     }
 
-    private Map<String, String> deocdeMeta(byte[] meta) {
+    private Map<String, String> decodeMeta(byte[] meta) {
         Map<String, String> map = new HashMap<String, String>();
         if (meta != null && meta.length > 0) {
             String[] s = new String(meta).split("\n");

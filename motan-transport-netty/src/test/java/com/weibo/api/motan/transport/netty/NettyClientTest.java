@@ -23,9 +23,7 @@ import com.weibo.api.motan.rpc.*;
 import com.weibo.api.motan.transport.Channel;
 import com.weibo.api.motan.transport.MessageHandler;
 import com.weibo.api.motan.util.RequestIdGenerator;
-
 import junit.framework.Assert;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -137,7 +135,7 @@ public class NettyClientTest {
         }
 
         // 模拟失败连接的次数大于或者等于设置的次数，client期望为不可用
-        url.addParameter(URLParamType.maxClientConnection.getName(), "1");
+        url.addParameter(URLParamType.fusingThreshold.getName(), "1");
         url.addParameter(URLParamType.requestTimeout.getName(), "1");
         nettyClient = new NettyClient(url);
         nettyClient.open();

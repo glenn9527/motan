@@ -43,8 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractRegistry implements Registry {
 
-    private ConcurrentHashMap<URL, Map<String, List<URL>>> subscribedCategoryResponses =
-            new ConcurrentHashMap<URL, Map<String, List<URL>>>();
+    private ConcurrentHashMap<URL, Map<String, List<URL>>> subscribedCategoryResponses = new ConcurrentHashMap<>();
 
     private URL registryUrl;
     private Set<URL> registeredServiceUrls = new ConcurrentHashSet<URL>();
@@ -211,9 +210,7 @@ public abstract class AbstractRegistry implements Registry {
         }
 
         // refresh local urls cache
-        for (String nodeType : nodeTypeUrlsInRs.keySet()) {
-            curls.put(nodeType, nodeTypeUrlsInRs.get(nodeType));
-        }
+        curls.putAll(nodeTypeUrlsInRs);
 
         for (List<URL> us : nodeTypeUrlsInRs.values()) {
             listener.notify(getUrl(), us);

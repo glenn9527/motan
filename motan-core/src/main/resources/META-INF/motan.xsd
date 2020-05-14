@@ -282,6 +282,11 @@
                             <![CDATA[ The backup request max retry ratio of request. ]]></xsd:documentation>
                     </xsd:annotation>
                 </xsd:attribute>
+                <xsd:attribute name="slowThreshold" type="xsd:string" use="optional">
+                    <xsd:annotation>
+                        <xsd:documentation><![CDATA[ 慢请求阈值 ]]></xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -343,6 +348,11 @@
                 <xsd:attribute name="maxClientConnection" type="xsd:string" use="optional">
                     <xsd:annotation>
                         <xsd:documentation><![CDATA[ maxClientConnection ]]></xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="maxConnectionPerGroup" type="xsd:string" use="optional">
+                    <xsd:annotation>
+                        <xsd:documentation><![CDATA[ maxConnectionPerGroup ]]></xsd:documentation>
                     </xsd:annotation>
                 </xsd:attribute>
 
@@ -510,6 +520,11 @@
                     <xsd:documentation><![CDATA[ The method retry times. ]]></xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
+            <xsd:attribute name="slowThreshold" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[ 慢请求阈值 ]]></xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
         </xsd:complexType>
     </xsd:element>
     <xsd:element name="service">
@@ -593,7 +608,7 @@
                             <xsd:documentation><![CDATA[ 使用的协议 ]]></xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="interface" type="xsd:token" use="required">
+                    <xsd:attribute name="interface" type="xsd:token" use="optional" default="com.weibo.api.motan.proxy.CommonHandler">
                         <xsd:annotation>
                             <xsd:documentation><![CDATA[ The service interface class name. ]]></xsd:documentation>
                             <xsd:appinfo>
@@ -601,6 +616,11 @@
                                     <tool:expected-type type="java.lang.Class"/>
                                 </tool:annotation>
                             </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="serviceInterface" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation><![CDATA[ The service interface name. ]]></xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="client" type="xsd:string" use="optional">
@@ -621,6 +641,11 @@
                     <xsd:attribute name="extConfig" type="xsd:string" use="optional">
                         <xsd:annotation>
                             <xsd:documentation><![CDATA[ 扩展配置. ]]></xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="asyncInitConnection" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation><![CDATA[ 异步建立连接 ]]></xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>
@@ -681,6 +706,11 @@
                     <xsd:attribute name="errorRate" type="xsd:string" use="optional">
                         <xsd:annotation>
                             <xsd:documentation><![CDATA[ SLA错误率 ]]></xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="asyncInitConnection" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation><![CDATA[ 异步建立连接 ]]></xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>

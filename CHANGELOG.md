@@ -1,5 +1,130 @@
 # Change Log
 
+## [1.1.8](https://github.com/weibocom/motan/tree/1.1.8) (2020-03-26)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.1.7...1.1.8)
+
+**Merged pull requests:**
+
+- Bump tomcat-embed-core from 7.0.91 to 7.0.99 [\#881](https://github.com/weibocom/motan/pull/881) ([dependabot](https://github.com/dependabot))
+- add reject profile detail [\#883](https://github.com/weibocom/motan/pull/883) ([sunnights](https://github.com/sunnights))
+- limit client total connections [\#885](https://github.com/weibocom/motan/pull/885) ([Wshoway](https://github.com/Wshoway))
+- improve README:fix typo and improve format [\#890](https://github.com/weibocom/motan/pull/890) ([oldratlee](https://github.com/oldratlee))
+
+**Fixed bugs:**
+
+- fix multi consul registry [\#885](https://github.com/weibocom/motan/pull/885) ([Ray](https://github.com/rayzhang0603))
+
+## [1.1.7](https://github.com/weibocom/motan/tree/1.1.7) (2019-12-05)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.1.6...1.1.7)
+
+**Implemented enhancements:**
+
+- support breeze serialization [\#822](https://github.com/weibocom/motan/pull/822) ([Ray](https://github.com/rayzhang0603))
+- update yar-java [\#872](https://github.com/weibocom/motan/pull/872) ([Ray](https://github.com/rayzhang0603))
+- remove BeanPostProcessor in ServiceConfigBean [\#875](https://github.com/weibocom/motan/pull/875) ([Wshoway](https://github.com/Wshoway))
+
+**Fixed bugs:**
+
+- remove request exception stacktrace in transport-netty4 [\#836](https://github.com/weibocom/motan/pull/836) ([sunnights](https://github.com/sunnights))
+
+## [1.1.6](https://github.com/weibocom/motan/tree/1.1.6) (2019-07-04)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.1.5...1.1.6)
+
+**Implemented enhancements:**
+
+- add trace tag in request&response [\#836](https://github.com/weibocom/motan/pull/836) ([sunnights](https://github.com/sunnights))
+- support custom slow threshold [\#836](https://github.com/weibocom/motan/pull/836) ([sunnights](https://github.com/sunnights))
+
+**Fixed bugs:**
+
+- remove request exception stacktrace in transport-netty4 [\#836](https://github.com/weibocom/motan/pull/836) ([sunnights](https://github.com/sunnights))
+
+## [1.1.5](https://github.com/weibocom/motan/tree/1.1.5) (2019-05-16)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.1.4...1.1.5)
+
+**Implemented enhancements:**
+
+- decouple attachments for request & response [\#827](https://github.com/weibocom/motan/pull/827) ([sunnights](https://github.com/sunnights))
+- optimize getChannel in SharedPoolClient [\#827](https://github.com/weibocom/motan/pull/827) ([sunnights](https://github.com/sunnights))
+
+**Fixed bugs:**
+
+- fix #829, available check in transport-netty [\#827](https://github.com/weibocom/motan/pull/827) ([sunnights](https://github.com/sunnights))
+
+## [1.1.4](https://github.com/weibocom/motan/tree/1.1.4) (2018-12-18)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.1.3...1.1.4)
+
+**Implemented enhancements:**
+
+- add Content-Length header & fix #812 [\#816](https://github.com/weibocom/motan/pull/816) ([sunnights](https://github.com/sunnights))
+
+**Fixed bugs:**
+
+- fix dependency conflict issue [\#802](https://github.com/weibocom/motan/pull/802) ([HelloCoCooo](https://github.com/HelloCoCooo))
+- fix dependency conflict issue [\#815](https://github.com/weibocom/motan/pull/815) ([HelloCoCooo](https://github.com/HelloCoCooo))
+
+## [1.1.3](https://github.com/weibocom/motan/tree/1.1.3) (2018-12-24)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.1.2...1.1.3)
+
+**Fixed bugs:**
+
+- fix: compatible with zookeeper string serializer [\#707](https://github.com/weibocom/motan/pull/781) ([sunnights](https://github.com/sunnights))
+
+## [1.1.2](https://github.com/weibocom/motan/tree/1.1.2) (2018-12-18)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.1.1...1.1.2)
+
+**Implemented enhancements:**
+
+- improvement: nettyclient scheduledExecutor optimization [\#709](https://github.com/weibocom/motan/pull/709) ([sunnights](https://github.com/sunnights))
+- improvement: getChannelKey when necessary [\#711](https://github.com/weibocom/motan/pull/711) ([pifuant](https://github.com/pifuant))
+- improvement: LocalSwitcherService registerListener and unRegisterListener optimization [\#713](https://github.com/weibocom/motan/pull/713) ([pifuant](https://github.com/pifuant))
+- optimize exception stack and log level [\#730](https://github.com/weibocom/motan/pull/730) ([sunnights](https://github.com/sunnights))
+- optimize zookeeper serialization method [\#732](https://github.com/weibocom/motan/pull/732) ([Zha-Zha](https://github.com/Zha-Zha))
+- update dependency for potential security vulnerability [\#762](https://github.com/weibocom/motan/pull/762) ([rayzhang0603](https://github.com/rayzhang0603))
+- add traceable request and statistic message [\#740](https://github.com/weibocom/motan/pull/740) ([sunnights](https://github.com/sunnights))
+
+**Fixed bugs:**
+
+- netty4 add channel manage [\#707](https://github.com/weibocom/motan/pull/707) ([sunnights](https://github.com/sunnights))
+- fix consul read timeout [\#746](https://github.com/weibocom/motan/pull/746) ([sunnights](https://github.com/sunnights))
+- fix get channel error [\#776](https://github.com/weibocom/motan/pull/776) ([caorong](https://github.com/caorong))
+
+## [1.1.1](https://github.com/weibocom/motan/tree/1.1.1) (2018-05-17)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.1.0...1.1.1)
+
+**Implemented enhancements:**
+
+- support multi serialize in simpleSerialization [\#635](https://github.com/weibocom/motan/pull/635) ([Ray](https://github.com/rayzhang0603))
+- support more data type in simpleSerialization [\#683](https://github.com/weibocom/motan/pull/683) ([lion2luo](https://github.com/lion2luo))
+- add rpc common client [\#682](https://github.com/weibocom/motan/pull/682) [\#702](https://github.com/weibocom/motan/pull/702) ([sunnights](https://github.com/sunnights))
+- enable channel manage for netty4 server [\#707](https://github.com/weibocom/motan/pull/707) ([sunnights](https://github.com/sunnights))
+
+**Fixed bugs:**
+
+- optimize netty4 server when reject request [\#613](https://github.com/weibocom/motan/pull/613) ([sunnights](https://github.com/sunnights))
+- fix NPE when discover service failed [\#637](https://github.com/weibocom/motan/pull/637) ([sunnights](https://github.com/sunnights))
+- fix netty channel close issue in netty4 [\#693](https://github.com/weibocom/motan/pull/693) ([sunnights](https://github.com/sunnights))
+- fix connection leak when netty client create connection with exception [\#670](https://github.com/weibocom/motan/pull/670) ([lion2luo](https://github.com/lion2luo))
+
+## [1.1.0](https://github.com/weibocom/motan/tree/1.1.0) (2017-10-31)
+[Full Changelog](https://github.com/weibocom/motan/compare/1.0.0...1.1.0)
+
+**Implemented enhancements:**
+
+- add netty4 support [\#595](https://github.com/weibocom/motan/pull/595) ([sunnights](https://github.com/sunnights))
+
+**Fixed bugs:**
+
+- fix MotanAsyncProcessor warning info above jdk7 [\#602](https://github.com/weibocom/motan/pull/602) ([Panying](https://github.com/anylain))
+- fix async return null when send exception happened [\#605](https://github.com/weibocom/motan/pull/605) ([Ray](https://github.com/rayzhang0603))
+- fix motan2 decode fail when object is null [\#591](https://github.com/weibocom/motan/pull/591) ([Ray](https://github.com/rayzhang0603))
+
+**Merged pull requests:**
+
+- update consul version [\#587](https://github.com/weibocom/motan/pull/587) ([Michael Yang](https://github.com/yangfuhai))
+
+
+
 ## [1.0.0](https://github.com/weibocom/motan/tree/1.0.0) (2017-10-31)
 [Full Changelog](https://github.com/weibocom/motan/compare/0.3.1...1.0.0)
 

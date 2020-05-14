@@ -17,6 +17,7 @@
 package com.weibo.api.motan.transport.netty;
 
 import com.weibo.api.motan.common.ChannelState;
+import com.weibo.api.motan.common.MotanConstants;
 import com.weibo.api.motan.common.URLParamType;
 import com.weibo.api.motan.exception.MotanErrorMsgConstant;
 import com.weibo.api.motan.exception.MotanFrameworkException;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author maijunsheng
  * @version 创建时间：2013-5-31
- * 
+ *
  */
 public class NettyChannel implements com.weibo.api.motan.transport.Channel {
 	private volatile ChannelState state = ChannelState.UNINIT;
@@ -67,14 +68,15 @@ public class NettyChannel implements com.weibo.api.motan.transport.Channel {
 		boolean result = writeFuture.awaitUninterruptibly(timeout, TimeUnit.MILLISECONDS);
 
 		if (result && writeFuture.isSuccess()) {
+			MotanFrameworkUtil.logEvent(request, MotanConstants.TRACE_CSEND, System.currentTimeMillis());
 			response.addListener(new FutureListener() {
 				@Override
 				public void operationComplete(Future future) throws Exception {
 					if (future.isSuccess() || (future.isDone() && ExceptionUtil.isBizException(future.getException()))) {
-						// 成功的调用 
+						// 成功的调用
 						nettyClient.resetErrorCount();
 					} else {
-						// 失败的调用 
+						// 失败的调用
 						nettyClient.incrErrorCount();
 					}
 				}
@@ -89,7 +91,7 @@ public class NettyChannel implements com.weibo.api.motan.transport.Channel {
 			response.cancel();
 		}
 
-		// 失败的调用 
+		// 失败的调用
 		nettyClient.incrErrorCount();
 
 		if (writeFuture.getCause() != null) {
@@ -111,8 +113,9 @@ public class NettyChannel implements com.weibo.api.motan.transport.Channel {
 			return true;
 		}
 
+		ChannelFuture channelFuture = null;
 		try {
-			ChannelFuture channleFuture = nettyClient.getBootstrap().connect(
+			channelFuture = nettyClient.getBootstrap().connect(
 					new InetSocketAddress(nettyClient.getUrl().getHost(), nettyClient.getUrl().getPort()));
 
 			long start = System.currentTimeMillis();
@@ -123,11 +126,11 @@ public class NettyChannel implements com.weibo.api.motan.transport.Channel {
 	                    MotanErrorMsgConstant.FRAMEWORK_INIT_ERROR);
 			}
 			// 不去依赖于connectTimeout
-			boolean result = channleFuture.awaitUninterruptibly(timeout, TimeUnit.MILLISECONDS);
-            boolean success = channleFuture.isSuccess();
+			boolean result = channelFuture.awaitUninterruptibly(timeout, TimeUnit.MILLISECONDS);
+            boolean success = channelFuture.isSuccess();
 
 			if (result && success) {
-				channel = channleFuture.getChannel();
+				channel = channelFuture.getChannel();
 				if (channel.getLocalAddress() != null && channel.getLocalAddress() instanceof InetSocketAddress) {
 					localAddress = (InetSocketAddress) channel.getLocalAddress();
 				}
@@ -136,22 +139,25 @@ public class NettyChannel implements com.weibo.api.motan.transport.Channel {
 				return true;
 			}
             boolean connected = false;
-            if(channleFuture.getChannel() != null){
-                connected = channleFuture.getChannel().isConnected();
+            if(channelFuture.getChannel() != null){
+                connected = channelFuture.getChannel().isConnected();
             }
 
-			if (channleFuture.getCause() != null) {
-				channleFuture.cancel();
+			if (channelFuture.getCause() != null) {
+				channelFuture.cancel();
 				throw new MotanServiceException("NettyChannel failed to connect to server, url: "
-						+ nettyClient.getUrl().getUri()+ ", result: " + result + ", success: " + success + ", connected: " + connected, channleFuture.getCause());
+						+ nettyClient.getUrl().getUri()+ ", result: " + result + ", success: " + success + ", connected: " + connected, channelFuture.getCause());
 			} else {
-				channleFuture.cancel();
+				channelFuture.cancel();
                 throw new MotanServiceException("NettyChannel connect to server timeout url: "
                         + nettyClient.getUrl().getUri() + ", cost: " + (System.currentTimeMillis() - start) + ", result: " + result + ", success: " + success + ", connected: " + connected);
             }
 		} catch (MotanServiceException e) {
 			throw e;
 		} catch (Exception e) {
+			if (channelFuture != null) {
+				channelFuture.getChannel().close();
+			}
 			throw new MotanServiceException("NettyChannel failed to connect to server, url: "
 					+ nettyClient.getUrl().getUri(), e);
 		} finally {
@@ -175,8 +181,7 @@ public class NettyChannel implements com.weibo.api.motan.transport.Channel {
 				channel.close();
 			}
 		} catch (Exception e) {
-			LoggerUtil
-					.error("NettyChannel close Error: " + nettyClient.getUrl().getUri() + " local=" + localAddress, e);
+			LoggerUtil.error("NettyChannel close Error: " + nettyClient.getUrl().getUri() + " local=" + localAddress, e);
 		}
 	}
 
@@ -197,7 +202,7 @@ public class NettyChannel implements com.weibo.api.motan.transport.Channel {
 
 	@Override
 	public boolean isAvailable() {
-		return state.isAliveState();
+		return state.isAliveState() && channel != null && channel.isConnected();
 	}
 
 	@Override
