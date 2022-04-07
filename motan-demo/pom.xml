@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.weibo</groupId>
         <artifactId>motan</artifactId>
-        <version>1.1.10-SNAPSHOT</version>
+        <version>1.1.11-SNAPSHOT</version>
     </parent>
     <artifactId>motan-demo</artifactId>
     <name>motan-demo</name>
@@ -97,6 +97,11 @@
         <dependency>
             <groupId>com.weibo</groupId>
             <artifactId>serialization-extension</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.weibo</groupId>
+            <artifactId>motan-registry-weibomesh</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
